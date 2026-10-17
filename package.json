@@ -1,0 +1,7 @@
+{
+  "name": "neonmanga",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Mobile-friendly manga discovery and reader using public catalogue APIs",
+  "engines": { "node": ">=20" }
+}
