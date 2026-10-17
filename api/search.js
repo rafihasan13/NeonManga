@@ -18,20 +18,42 @@ export default async function handler(req, res) {
   }
   try {
     const upstream = await fetch('https://api.mangadex.org/manga?' + params.toString(), {
-      headers: { 'User-Agent': 'NeonManga/0.1 (manga discovery reader)' }
+      headers: { 'User-Agent': 'NeonManga/0.2 (manga discovery reader)' }
     });
     if (!upstream.ok) return res.status(upstream.status).json({ error: 'MangaDex API returned ' + upstream.status });
     const body = await upstream.json();
-    const data = (body.data || []).map(m => {
+    const mangas = body.data || [];
+    // MangaDex may omit cover attributes from manga relationships; retrieve cover filenames explicitly in one batch.
+    const ids = mangas.map(m => m.id).filter(Boolean);
+    const coverByManga = new Map();
+    if (ids.length) {
+      const cp = new URLSearchParams();
+      ids.forEach(id => cp.append('manga[]', id));
+      cp.set('limit', String(Math.min(100, ids.length * 2)));
+      cp.set('order[volume]', 'desc');
+      const cr = await fetch('https://api.mangadex.org/cover?' + cp.toString(), {
+        headers: { 'User-Agent': 'NeonManga/0.2 (manga discovery reader)' }
+      });
+      if (cr.ok) {
+        const cb = await cr.json();
+        for (const cv of (cb.data || [])) {
+          const mid = (cv.relationships || []).find(x => x.type === 'manga')?.id;
+          const fn = cv.attributes?.fileName;
+          if (mid && fn && !coverByManga.has(mid)) coverByManga.set(mid, fn);
+        }
+      }
+    }
+    const data = mangas.map(m => {
       const a = m.attributes || {};
       const rel = m.relationships || [];
       const cover = rel.find(x => x.type === 'cover_art');
+      const filename = coverByManga.get(m.id) || cover?.attributes?.fileName;
       const title = a.title?.en || Object.values(a.title || {})[0] || 'Untitled';
       return {
         id: m.id, title, altTitles: (a.altTitles || []).flatMap(x => Object.values(x)),
         description: a.description?.en || Object.values(a.description || {})[0] || '',
         status: a.status || '', year: a.year || null,
-        cover: cover?.attributes?.fileName ? 'https://uploads.mangadex.org/covers/' + m.id + '/' + cover.attributes.fileName + '.256.jpg' : '',
+        cover: filename ? 'https://uploads.mangadex.org/covers/' + m.id + '/' + filename + '.256.jpg' : '',
         url: 'https://mangadex.org/title/' + m.id,
         source: 'MangaDex'
       };
