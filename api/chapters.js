@@ -9,7 +9,7 @@ export default async function handler(req, res) {
     const p = new URLSearchParams();
     p.set('manga', id);
     p.set('limit', '100');
-    p.set('offset', String(Math.max(0, Math.min(10000, Number(req.query.offset || 0))));
+    p.set('offset', String(Math.max(0, Math.min(10000, Number(req.query.offset || 0)))));
     p.set('translatedLanguage[]', language);
     p.set('order[chapter]', 'asc');
     p.set('order[volume]', 'asc');
