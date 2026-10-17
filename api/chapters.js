@@ -4,7 +4,7 @@ export default async function handler(req, res) {
   const id = String(req.query.id || '').trim();
   if (!/^[0-9a-f-]{36}$/i.test(id)) return res.status(400).json({ error: 'A valid manga id is required.' });
   const p = new URLSearchParams();
-  p.set('manga', id); p.set('limit', '100'); p.set('offset', String(Math.max(0, Number(req.query.offset || 0)));
+  p.set('manga', id); p.set('limit', '100'); p.set('offset', String(Math.max(0, Number(req.query.offset || 0))));
   p.set('translatedLanguage[]', String(req.query.lang || 'en'));
   p.set('order[chapter]', 'asc'); p.set('order[volume]', 'asc');
   p.set('includes[]', 'scanlation_group'); p.set('contentRating[]', 'safe'); p.set('contentRating[]', 'suggestive');
